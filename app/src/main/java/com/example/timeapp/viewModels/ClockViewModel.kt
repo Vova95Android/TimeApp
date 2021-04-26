@@ -20,7 +20,7 @@ class ClockViewModel(): ViewModel() {
                 val hour = cal.get(Calendar.HOUR_OF_DAY)
                 val min = cal.get(Calendar.MINUTE)
                 val sec = cal.get(Calendar.SECOND)
-                clock.setTime(hour, min, sec)
+                //clock.setTime(hour, min, sec)
                 delay(500)
             }
             cancel()

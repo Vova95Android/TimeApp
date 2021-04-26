@@ -7,11 +7,16 @@ import android.graphics.Paint
 import android.graphics.Rect
 import android.util.AttributeSet
 import android.util.TypedValue
+import android.view.MotionEvent
 import android.view.View
+import android.widget.Toast
+import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.sin
+import kotlin.math.sqrt
 
-class TimeView(context: Context, attrs: AttributeSet) : View(context, attrs) {
+
+class TimeView @JvmOverloads constructor(context: Context, attrs: AttributeSet?=null, defStyleAttr: Int=0) : View(context, attrs, defStyleAttr) {
 
     private var heightClock = 0
     private var widthClock = 0
@@ -24,11 +29,17 @@ class TimeView(context: Context, attrs: AttributeSet) : View(context, attrs) {
     private var isInit = false
     private var numbers: Array<Int> = arrayOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12)
     private var rect = Rect()
-    private var hour = 0
-    private var min = 0
+    private var hour = 6
+    private var min = 15
     private var sec = 0
     private var xCenter=0f
     private var yCenter=0f
+    private var touchActive=0
+    private val HOUR=1
+    private val MIN=2
+    private val SEC=3
+    private val DEACTIVE=0
+    private var actualI=0
 
 
     override fun onDraw(canvas: Canvas?) {
@@ -45,8 +56,118 @@ class TimeView(context: Context, attrs: AttributeSet) : View(context, attrs) {
         //invalidate()
     }
 
+    override fun onTouchEvent(event: MotionEvent?): Boolean {
+        if(event!=null) {
+            val xTemp = event.x
+            val yTemp = event.y
+            if (event.action == MotionEvent.ACTION_DOWN) {
+                for (i in 0..60) {
+                    val angle = Math.PI * i / 30 - Math.PI / 2
+                    val xEnd = (xCenter + cos(angle) * (radiusClock + 50)).toFloat()
+                    val yEnd = (yCenter + sin(angle) * (radiusClock + 50)).toFloat()
+                    //val s = abs((xCenter - xEnd) * (yTemp - yEnd)-(yCenter - yEnd) * (xTemp - xEnd))
+                    //(x - x1) / (x2 - x1) = (y - y1) / (y2 - y1)
+                    val s = (xTemp-xCenter)/(xEnd-xCenter)-(yTemp-yCenter)/(yEnd-yCenter)
+                    if (s<1f) {
+                        invalidate()
+                        actualI = (s * 1000).toInt()
+                        return true
+                    }
 
-    fun initClock() {
+//                    if ((s<1f)&&(s>0)&&(i<30)){
+//                        if(abs((hour-i/5).toDouble())<2){
+//                            touchActive=HOUR
+//                            invalidate()
+//                            actualI=i
+//                            return true
+//                        }else if (abs((min-i).toFloat())<2) {
+//                            touchActive=MIN
+//                            invalidate()
+//                            actualI=i
+//                            return true
+//                        }else if (abs((sec-i).toFloat())<2) {
+//                            touchActive = SEC
+//                            invalidate()
+//                            actualI=i
+//                            return true
+//                        }
+//                    }
+//                    else if ((s<1f)){
+//                        if(abs((hour-i/5).toDouble())<2){
+//                            touchActive=HOUR
+//                            invalidate()
+//                            actualI=i
+//                            return true
+//                        }else if (abs((min-i).toFloat())<2) {
+//                            touchActive=MIN
+//                            invalidate()
+//                            actualI=i
+//                            return true
+//                        }else if (abs((sec-i).toFloat())<2) {
+//                            touchActive = SEC
+//                            invalidate()
+//                            actualI=i
+//                            return true
+//                        }
+//                    }
+                }
+            } else if(event.action==MotionEvent.ACTION_MOVE){
+                for (i in 0..60) {
+                    val angle = Math.PI * i / 30 - Math.PI / 2
+                    val xEnd = (xCenter + cos(angle) * (radiusClock + 50)).toFloat()
+                    val yEnd = (yCenter + sin(angle) * (radiusClock + 50)).toFloat()
+                    //val s = (xCenter - xEnd) * (yTemp - yEnd)-(yCenter - yEnd) * (xTemp - xEnd)
+                    val s = (xTemp-xCenter)/(xEnd-xCenter)-(yTemp-yCenter)/(yEnd-yCenter)
+                    if ((s<1f)&&(s>0)&&(i<30)){
+                        when(touchActive){
+                            HOUR->if(abs((hour-i/5).toDouble())<2){
+                                hour=i/5
+                                invalidate()
+                                actualI=i
+                                return true
+                            }
+                            MIN->if(abs((min-i).toDouble())<2){
+                                min=i
+                                invalidate()
+                                actualI=i
+                                return true
+                            }
+                            SEC->if(abs((sec-i).toDouble())<2){
+                                sec=i
+                                invalidate()
+                                actualI=i
+                                return true
+                            }
+                        }
+                    }else if ((s>-1f)&&(s<0)&&(i>=30)){
+                        when(touchActive){
+                            HOUR->if(abs((hour-i/5).toDouble())<2){
+                                hour=i/5
+                                invalidate()
+                                actualI=i
+                                return true
+                            }
+                            MIN->if(abs((min-i).toDouble())<2){
+                                min=i
+                                invalidate()
+                                actualI=i
+                                return true
+                            }
+                            SEC->if(abs((sec-i).toDouble())<2){
+                                sec=i
+                                invalidate()
+                                actualI=i
+                                return true
+                            }
+                        }
+                    }
+                }
+            }else if(event.action==MotionEvent.ACTION_UP) touchActive=DEACTIVE
+        }
+            return true
+    }
+
+    private fun initClock() {
         widthClock = width
         heightClock = height
         xCenter=(widthClock/2).toFloat()
@@ -56,7 +177,7 @@ class TimeView(context: Context, attrs: AttributeSet) : View(context, attrs) {
             TypedValue.COMPLEX_UNIT_SP, 13f,
             resources.displayMetrics
         ).toInt()
-        val min = Math.min(heightClock, widthClock)
+        val min = heightClock.coerceAtMost(widthClock)
         radiusClock = min / 2 - paddingClock-5
         handTruncationClock = min / 20
         hourHandTruncationClock = min / 7
@@ -94,14 +215,15 @@ class TimeView(context: Context, attrs: AttributeSet) : View(context, attrs) {
         hour = if (hour > 12) hour - 12 else hour
         drawHand(canvas, (hour + min / 60) * 5f, true)
         drawHand(canvas, min.toFloat(), false)
-        drawHand(canvas, sec.toFloat(), false)
+        drawHand(canvas, sec.toFloat(), null)
     }
 
-    private fun drawHand(canvas: Canvas?, loc: Float, isHour: Boolean) {
+    private fun drawHand(canvas: Canvas?, loc: Float, isHour: Boolean?) {
         val angle = Math.PI * loc / 30 - Math.PI / 2
         val handRadius =
-            if (isHour) (radiusClock - handTruncationClock - hourHandTruncationClock)
-            else (radiusClock - handTruncationClock)
+            if (isHour==true) (radiusClock - handTruncationClock - hourHandTruncationClock)
+            else if (isHour==false) (radiusClock - handTruncationClock)
+                 else radiusClock
         canvas?.drawLine(
             xCenter, yCenter,
             (xCenter + cos(angle) * handRadius).toFloat(),
@@ -119,6 +241,7 @@ class TimeView(context: Context, attrs: AttributeSet) : View(context, attrs) {
             val y = yCenter + (sin(angle) * radiusClock).toFloat()
             canvas?.drawText(tmp, x-15, y+10, paint)
         }
+        canvas?.drawText(actualI.toString(),xCenter+40, yCenter+40,paint)
     }
 
     private fun drawCenter(canvas: Canvas?) {
