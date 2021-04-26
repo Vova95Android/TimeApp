@@ -8,6 +8,8 @@ import android.graphics.Rect
 import android.util.AttributeSet
 import android.util.TypedValue
 import android.view.View
+import kotlin.math.cos
+import kotlin.math.sin
 
 class TimeView(context: Context, attrs: AttributeSet) : View(context, attrs) {
 
@@ -29,6 +31,21 @@ class TimeView(context: Context, attrs: AttributeSet) : View(context, attrs) {
     private var yCenter=0f
 
 
+    override fun onDraw(canvas: Canvas?) {
+        super.onDraw(canvas)
+        if (!isInit) initClock()
+        canvas?.drawColor(Color.WHITE)
+        drawCircle(canvas)
+        drawCenter(canvas)
+        drawNumbers(canvas)
+        drawSecond(canvas)
+        drawHands(canvas)
+
+        //postInvalidateDelayed(500)
+        //invalidate()
+    }
+
+
     fun initClock() {
         widthClock = width
         heightClock = height
@@ -46,36 +63,6 @@ class TimeView(context: Context, attrs: AttributeSet) : View(context, attrs) {
         isInit = true
     }
 
-
-    override fun onDraw(canvas: Canvas?) {
-        super.onDraw(canvas)
-        if (!isInit) initClock()
-        canvas?.drawColor(Color.WHITE)
-        drawCircel(canvas)
-        drawCenter(canvas)
-        drawNumeral(canvas)
-        drawSecond(canvas)
-        drawHands(canvas)
-
-        //postInvalidateDelayed(500)
-        //invalidate()
-    }
-
-    private fun drawSecond(canvas: Canvas?) {
-        for (i in 0..60) {
-            val angle = Math.PI * i / 30 - Math.PI / 2
-            val x = xCenter + Math.cos(angle) * (radiusClock+30)
-            val y = yCenter + Math.sin(angle) * (radiusClock+30)
-            canvas?.drawLine(
-                x.toFloat(),
-                y.toFloat(),
-                (xCenter + Math.cos(angle) * (radiusClock+50)).toFloat(),
-                (yCenter + Math.sin(angle) * (radiusClock+50)).toFloat(),
-                paint
-            )
-        }
-    }
-
     fun setTime(hour: Int, min: Int, sec: Int) {
         this.hour = hour
         this.min = min
@@ -83,9 +70,27 @@ class TimeView(context: Context, attrs: AttributeSet) : View(context, attrs) {
         invalidate()
     }
 
+    private fun drawSecond(canvas: Canvas?) {
+        for (i in 0..60) {
+            val angle = Math.PI * i / 30 - Math.PI / 2
+            val x = xCenter + cos(angle) * (radiusClock+30)
+            val y = yCenter + sin(angle) * (radiusClock+30)
+            canvas?.drawLine(
+                x.toFloat(),
+                y.toFloat(),
+                (xCenter + cos(angle) * (radiusClock+50)).toFloat(),
+                (yCenter + sin(angle) * (radiusClock+50)).toFloat(),
+                paint
+            )
+        }
+    }
+
     private fun drawHands(canvas: Canvas?) {
-        //val calendar=Calendar.getInstance()
-        //var hour=calendar.get(Calendar.HOUR_OF_DAY)
+//        val cal= Calendar.getInstance()
+//        hour=cal.get(Calendar.HOUR_OF_DAY)
+//        min=cal.get(Calendar.MINUTE)
+//        sec=cal.get(Calendar.SECOND)
+
         hour = if (hour > 12) hour - 12 else hour
         drawHand(canvas, (hour + min / 60) * 5f, true)
         drawHand(canvas, min.toFloat(), false)
@@ -99,19 +104,19 @@ class TimeView(context: Context, attrs: AttributeSet) : View(context, attrs) {
             else (radiusClock - handTruncationClock)
         canvas?.drawLine(
             xCenter, yCenter,
-            (xCenter + Math.cos(angle) * handRadius).toFloat(),
-            (yCenter + Math.sin(angle) * handRadius).toFloat(), paint
+            (xCenter + cos(angle) * handRadius).toFloat(),
+            (yCenter + sin(angle) * handRadius).toFloat(), paint
         )
     }
 
-    private fun drawNumeral(canvas: Canvas?) {
+    private fun drawNumbers(canvas: Canvas?) {
         paint.textSize = fontSizeClock.toFloat()
         for (i in numbers) {
             val tmp = i.toString()
             paint.getTextBounds(tmp, 0, tmp.length, rect)
             val angle = Math.PI / 6 * (i - 3)
-            val x = xCenter + (Math.cos(angle) * radiusClock).toFloat()
-            val y = yCenter + (Math.sin(angle) * radiusClock).toFloat()
+            val x = xCenter + (cos(angle) * radiusClock).toFloat()
+            val y = yCenter + (sin(angle) * radiusClock).toFloat()
             canvas?.drawText(tmp, x-15, y+10, paint)
         }
     }
@@ -121,7 +126,7 @@ class TimeView(context: Context, attrs: AttributeSet) : View(context, attrs) {
         canvas?.drawCircle((widthClock / 2).toFloat(), (heightClock / 2).toFloat(), 12f, paint)
     }
 
-    private fun drawCircel(canvas: Canvas?) {
+    private fun drawCircle(canvas: Canvas?) {
         paint.reset()
         paint.setColor(Color.BLACK)
         paint.strokeWidth = 5f
