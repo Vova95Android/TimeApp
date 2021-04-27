@@ -31,7 +31,7 @@ class TimeView @JvmOverloads constructor(context: Context, attrs: AttributeSet?=
     private var rect = Rect()
     private var hour = 6
     private var min = 15
-    private var sec = 0
+    private var sec = 45
     private var xCenter=0f
     private var yCenter=0f
     private var touchActive=0
@@ -60,109 +60,117 @@ class TimeView @JvmOverloads constructor(context: Context, attrs: AttributeSet?=
         if(event!=null) {
             val xTemp = event.x
             val yTemp = event.y
-            if (event.action == MotionEvent.ACTION_DOWN) {
+            if ((event.action == MotionEvent.ACTION_DOWN)||(event.action==MotionEvent.ACTION_POINTER_DOWN)) {
                 for (i in 0..60) {
                     val angle = Math.PI * i / 30 - Math.PI / 2
                     val xEnd = (xCenter + cos(angle) * (radiusClock + 50)).toFloat()
                     val yEnd = (yCenter + sin(angle) * (radiusClock + 50)).toFloat()
-                    //val s = abs((xCenter - xEnd) * (yTemp - yEnd)-(yCenter - yEnd) * (xTemp - xEnd))
-                    //(x - x1) / (x2 - x1) = (y - y1) / (y2 - y1)
-                    val s = (xTemp-xCenter)/(xEnd-xCenter)-(yTemp-yCenter)/(yEnd-yCenter)
-                    if (s<1f) {
-                        invalidate()
-                        actualI = (s * 1000).toInt()
-                        return true
-                    }
+                    val a=(yCenter-yEnd)/(xCenter-xEnd)
+                    val b=((yCenter+yEnd)-a*(xCenter+xEnd))/2
+                    if (xCenter<xEnd) {
+                        if ((abs(yTemp - (a * xTemp + b))<60) && (xTemp > xCenter) && (xTemp < xEnd)){
+                            if(abs((hour-i/5).toDouble())<2){
+                            touchActive=HOUR
+                            invalidate()
+                            actualI=i
+                            return true
+                        }else if (abs((min-i).toFloat())<4) {
+                            touchActive=MIN
+                            invalidate()
+                            actualI=i
+                            return true
+                        }else if (abs((sec-i).toFloat())<4) {
+                            touchActive = SEC
+                            invalidate()
+                            actualI=i
+                            return true
+                        }
+                        }
 
-//                    if ((s<1f)&&(s>0)&&(i<30)){
-//                        if(abs((hour-i/5).toDouble())<2){
-//                            touchActive=HOUR
-//                            invalidate()
-//                            actualI=i
-//                            return true
-//                        }else if (abs((min-i).toFloat())<2) {
-//                            touchActive=MIN
-//                            invalidate()
-//                            actualI=i
-//                            return true
-//                        }else if (abs((sec-i).toFloat())<2) {
-//                            touchActive = SEC
-//                            invalidate()
-//                            actualI=i
-//                            return true
-//                        }
-//                    }
-//                    else if ((s<1f)){
-//                        if(abs((hour-i/5).toDouble())<2){
-//                            touchActive=HOUR
-//                            invalidate()
-//                            actualI=i
-//                            return true
-//                        }else if (abs((min-i).toFloat())<2) {
-//                            touchActive=MIN
-//                            invalidate()
-//                            actualI=i
-//                            return true
-//                        }else if (abs((sec-i).toFloat())<2) {
-//                            touchActive = SEC
-//                            invalidate()
-//                            actualI=i
-//                            return true
-//                        }
-//                    }
+                    } else if (xCenter>=xEnd) {
+                            if ((abs(yTemp - (a * xTemp + b))<60) && (xTemp <= xCenter) && (xTemp >= xEnd)){
+                                if(abs((hour-i/5).toDouble())<2){
+                                    touchActive=HOUR
+                                    invalidate()
+                                    actualI=i
+                                    return true
+                                }else if (abs((min-i).toFloat())<4) {
+                                    touchActive=MIN
+                                    invalidate()
+                                    actualI=i
+                                    return true
+                                }else if (abs((sec-i).toFloat())<4) {
+                                    touchActive = SEC
+                                    invalidate()
+                                    actualI=i
+                                    return true
+                                }
+                            }
+
+                        }
                 }
-            } else if(event.action==MotionEvent.ACTION_MOVE){
+            } else if((event.action==MotionEvent.ACTION_MOVE)||(event.action==MotionEvent.ACTION_HOVER_MOVE)){
                 for (i in 0..60) {
                     val angle = Math.PI * i / 30 - Math.PI / 2
                     val xEnd = (xCenter + cos(angle) * (radiusClock + 50)).toFloat()
                     val yEnd = (yCenter + sin(angle) * (radiusClock + 50)).toFloat()
-                    //val s = (xCenter - xEnd) * (yTemp - yEnd)-(yCenter - yEnd) * (xTemp - xEnd)
-                    val s = (xTemp-xCenter)/(xEnd-xCenter)-(yTemp-yCenter)/(yEnd-yCenter)
-                    if ((s<1f)&&(s>0)&&(i<30)){
-                        when(touchActive){
-                            HOUR->if(abs((hour-i/5).toDouble())<2){
-                                hour=i/5
-                                invalidate()
-                                actualI=i
-                                return true
-                            }
-                            MIN->if(abs((min-i).toDouble())<2){
-                                min=i
-                                invalidate()
-                                actualI=i
-                                return true
-                            }
-                            SEC->if(abs((sec-i).toDouble())<2){
-                                sec=i
-                                invalidate()
-                                actualI=i
-                                return true
-                            }
-                        }
-                    }else if ((s>-1f)&&(s<0)&&(i>=30)){
-                        when(touchActive){
-                            HOUR->if(abs((hour-i/5).toDouble())<2){
-                                hour=i/5
-                                invalidate()
-                                actualI=i
-                                return true
-                            }
-                            MIN->if(abs((min-i).toDouble())<2){
-                                min=i
-                                invalidate()
-                                actualI=i
-                                return true
-                            }
-                            SEC->if(abs((sec-i).toDouble())<2){
-                                sec=i
-                                invalidate()
-                                actualI=i
-                                return true
+                    var a=0f
+                    if (xCenter!=xEnd) a=(yCenter-yEnd)/(xCenter-xEnd)
+                    val b=((yCenter+yEnd)-a*(xCenter+xEnd))/2
+                    if (xCenter<xEnd) {
+                        if ((abs(yTemp - (a * xTemp + b))<30) && (xTemp >= xCenter) && (xTemp <= xEnd)){
+                            when(touchActive){
+                                HOUR->{
+                                    hour=i/5
+                                    invalidate()
+                                    actualI=i
+                                    return true
+                                }
+                                MIN->{
+                                    min=i
+                                    invalidate()
+                                    actualI=i
+                                    return true
+                                }
+                                SEC->{
+                                    sec=i
+                                    invalidate()
+                                    actualI=i
+                                    return true
+                                }
                             }
                         }
+
+                    } else if (xCenter>=xEnd) {
+                        if ((abs(yTemp - (a * xTemp + b))<30) && (xTemp <= xCenter) && (xTemp >= xEnd)){
+                            when(touchActive){
+                                HOUR->{
+                                    hour=i/5
+                                    invalidate()
+                                    actualI=i
+                                    return true
+                                }
+                                MIN->{
+                                    min=i
+                                    invalidate()
+                                    actualI=i
+                                    return true
+                                }
+                                SEC->{
+                                    sec=i
+                                    invalidate()
+                                    actualI=i
+                                    return true
+                                }
+                            }
+                        }
+
                     }
                 }
-            }else if(event.action==MotionEvent.ACTION_UP) touchActive=DEACTIVE
+            }else if((event.action==MotionEvent.ACTION_UP) ||
+                (event.action==MotionEvent.ACTION_POINTER_UP) ||
+                (event.action==MotionEvent.ACTION_CANCEL))
+                touchActive=DEACTIVE
         }
             return true
     }
